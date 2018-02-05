@@ -68,10 +68,12 @@ class model(nn.Module):
         self.hidden_size = hidden_size
         self. num_layers = num_layers
         self.rnn = nn.LSTM(input_size, hidden_size, num_layers)
+        self.dense = nn.Linear(hidden_size,1)
 
     def forward(self, input, hidden, cell):
         out, hidden = self.rnn(input, (hidden, cell))
-        return out
+        output = self.dense(out)
+        return output
 
 
 if __name__ == "__main__":
@@ -105,11 +107,11 @@ if __name__ == "__main__":
     #--------rnn(input) predict 수행---------
     #Series 데이터인 train은 numpy의 ndarray이므로 torch tensor로 바꾸어 주어야한다
     X = Variable(torch.from_numpy(train_scaled[:-1,:]).float())
-    y = Variable(torch.from_numpy(train_scaled[1:,:]))
+    y = Variable(torch.from_numpy(train_scaled[-1,:]))
 
     X = X.view(-1, batch_size, input_size)
 
-    for i in range(0, 1):
+    for i in range(0, 100):
         hidden = Variable(torch.zeros(num_layers,batch_size,hidden_size))
         cell = Variable(torch.zeros(num_layers,batch_size,hidden_size))
 
@@ -120,7 +122,8 @@ if __name__ == "__main__":
         print('Predict size is ', predict.size())
 
         loss = nn.MSELoss()
-        predict = predict.view(-1, hidden_size)
+        predict = predict[-1, :]
+        predict = predict.view(-1, 1)
         y = y.float()
         err = loss(predict, y.view(-1))
         err.backward()
@@ -128,8 +131,6 @@ if __name__ == "__main__":
         print('Loss Is :::', err)
 
         yhat = invert_scale(scaler, X, predict)
-
-
 
 
 
